@@ -27,7 +27,6 @@ app = FastAPI(
     title="CityPulse API",
     description="Civic accountability API engine for real-time 311 sync, vision profiling, and complaint clustering.",
     version="1.0.0",
-    redirect_slashes=False,
 )
 
 # CORS Middleware setup
@@ -94,20 +93,22 @@ async def get_cities(db: AsyncSession = Depends(get_db)):
 app.include_router(cities_router)
 
 @app.post("/api/admin/sync")
-async def trigger_sync():
+async def trigger_sync(db: AsyncSession = Depends(get_db)):
     """Trigger 311 data sync for all cities."""
-    import asyncio
-    from app.tasks.sync_complaints import sync_city_complaints
     import threading
-    
+    from sqlalchemy import text as sa_text
+    from app.tasks.sync_complaints import sync_city_complaints
+
+    result = await db.execute(sa_text("SELECT id FROM cities WHERE active = true"))
+    city_ids = [str(row[0]) for row in result.fetchall()]
+
     def run_sync():
-        sync_city_complaints('69417903-70f5-4908-9471-d4dc09774881')
-        sync_city_complaints('1ce79465-1173-416c-bc69-83454f67e513')
-        sync_city_complaints('432e5f51-830f-42d2-aa33-005a00b394fc')
-    
+        for city_id in city_ids:
+            sync_city_complaints(city_id)
+
     thread = threading.Thread(target=run_sync)
     thread.start()
-    return {"status": "sync started for all cities"}
+    return {"status": "sync started", "cities": city_ids}
 
 @app.get("/health", tags=["System"])
 async def health_check():
