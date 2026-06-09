@@ -53,11 +53,6 @@ const client = axios.create({
   baseURL: API_BASE_URL,
 });
 
-/**
- * Normalizes and fetches complaints.
- * Since backend only supports filtering by a single status, we run queries in parallel
- * when 'all' is selected, and merge the resultant FeatureCollections.
- */
 export async function getComplaints(
   cityId: string,
   bbox: string,
@@ -85,12 +80,11 @@ export async function getComplaints(
 
   try {
     if (filters.status === 'all') {
-      // Query both open and closed in parallel and combine results
       const [openRes, closedRes] = await Promise.all([
-        client.get<GeoJSON.FeatureCollection>('/api/complaints', {
+        client.get<GeoJSON.FeatureCollection>('/api/complaints/', {
           params: buildParams('open'),
         }),
-        client.get<GeoJSON.FeatureCollection>('/api/complaints', {
+        client.get<GeoJSON.FeatureCollection>('/api/complaints/', {
           params: buildParams('closed'),
         }),
       ]);
@@ -103,7 +97,7 @@ export async function getComplaints(
         features: [...openFeatures, ...closedFeatures],
       };
     } else {
-      const response = await client.get<GeoJSON.FeatureCollection>('/api/complaints', {
+      const response = await client.get<GeoJSON.FeatureCollection>('/api/complaints/', {
         params: buildParams(filters.status),
       });
       return response.data;
@@ -117,9 +111,6 @@ export async function getComplaints(
   }
 }
 
-/**
- * Fetches spatial cluster points.
- */
 export async function getClusters(
   cityId: string,
   bbox?: string
@@ -131,7 +122,7 @@ export async function getClusters(
       params.append('bbox', bbox);
     }
 
-    const response = await client.get<GeoJSON.FeatureCollection>('/api/clusters', {
+    const response = await client.get<GeoJSON.FeatureCollection>('/api/clusters/', {
       params,
     });
     return response.data;
@@ -144,12 +135,9 @@ export async function getClusters(
   }
 }
 
-/**
- * Retrieves high level metadata operational analytics.
- */
 export async function getSummary(cityId: string): Promise<SummaryData> {
   try {
-    const response = await client.get<SummaryData>(`/api/stats/summary`, {
+    const response = await client.get<SummaryData>('/api/stats/summary', {
       params: { city_id: cityId },
     });
     return response.data;
@@ -173,9 +161,6 @@ export function getAuthHeaders(): Record<string, string> {
   return {};
 }
 
-/**
- * Multi-layer vision complaint file processing payload.
- */
 export async function fileComplaint(
   photo: File,
   lat: number,
@@ -204,26 +189,20 @@ export async function fileComplaint(
     {
       headers: {
         'Content-Type': 'multipart/form-data',
-        ...getAuthHeaders()
+        ...getAuthHeaders(),
       },
     }
   );
   return response.data;
 }
 
-/**
- * Raises operational ticket alerts to council district.
- */
 export async function escalateCluster(clusterId: string): Promise<EscalationResult> {
-  const response = await client.post<EscalationResult>('/api/escalations', {
+  const response = await client.post<EscalationResult>('/api/escalations/', {
     cluster_id: clusterId,
   });
   return response.data;
 }
 
-/**
- * Checks for existing escalations on a specific cluster, handling 404 gracefully.
- */
 export async function getEscalation(clusterId: string): Promise<EscalationRecord | null> {
   try {
     const response = await client.get<EscalationRecord>(`/api/escalations/${clusterId}`);
@@ -265,9 +244,6 @@ export interface ScorecardData {
   city_summary: CitySummaryScorecard;
 }
 
-/**
- * Retrieves the neighborhood accountability scorecard stats.
- */
 export async function getScorecard(cityId: string): Promise<ScorecardData> {
   const response = await client.get<ScorecardData>('/api/stats/scorecard', {
     params: { city_id: cityId },
