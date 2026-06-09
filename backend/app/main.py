@@ -29,7 +29,7 @@ app = FastAPI(
 # CORS Middleware setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=["https://citypulse-app-pied.vercel.app", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
