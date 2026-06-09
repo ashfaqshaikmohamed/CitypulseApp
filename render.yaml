@@ -1,8 +1,7 @@
 # FILE: render.yaml
-# ROLE: Defines all Render.com services — FastAPI backend, Celery worker, PostgreSQL, and Redis.
+# ROLE: Defines Render.com services — FastAPI backend, Redis, and PostgreSQL.
 
 services:
-  # ── FastAPI Backend ──────────────────────────────────────────────────────────
   - type: web
     name: citypulse-api
     runtime: docker
@@ -48,32 +47,6 @@ services:
       - key: VISION_MOCK
         value: false
 
-  # ── Celery Worker ────────────────────────────────────────────────────────────
-  - type: cron
-    name: citypulse-sync
-    runtime: docker
-    dockerfilePath: ./Dockerfile.worker
-    plan: free
-    schedule: "*/15 * * * *"
-    command: "python -c \"from app.tasks.sync_complaints import sync_city_complaints; sync_city_complaints('69417903-70f5-4908-9471-d4dc09774881'); sync_city_complaints('432e5f51-830f-42d2-aa33-005a00b394fc')\""
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: citypulse-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: citypulse-redis
-          type: redis
-          property: connectionString
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: NYC_311_APP_TOKEN
-        sync: false
-      - key: ENVIRONMENT
-        value: production
-
-  # ── Redis ────────────────────────────────────────────────────────────────────
   - type: redis
     name: citypulse-redis
     plan: free
@@ -81,7 +54,6 @@ services:
     ipAllowList: []
 
 databases:
-  # ── PostgreSQL with PostGIS ──────────────────────────────────────────────────
   - name: citypulse-db
     databaseName: citypulse
     user: citypulse
