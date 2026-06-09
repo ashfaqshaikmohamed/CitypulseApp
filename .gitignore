@@ -1,0 +1,40 @@
+# FILE: .gitignore
+# ROLE: Directs Git to ignore transient build directories, virtual environments, log logs, and user secrets.
+
+# Node / NextJS
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Python caching & build tools
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store
+
+# Local secrets & credentials
+.env
+.env.local
+.env.production
+.env.development
+!.env.example
