@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://citypulse:citypulse@localhost:5432/citypulse"
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def fix_database_url(cls, v: str) -> str:
+        # Render provides postgresql:// but asyncpg needs postgresql+asyncpg://
+        if isinstance(v, str) and v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+    
     # Redis Cache/Queue
     REDIS_URL: str = "redis://localhost:6379/0"
 
