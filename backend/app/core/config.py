@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     SECRET_KEY: str = "generate_a_random_64char_string_here_fallback_key_32_chars_long_long"
     CORS_ORIGINS: str = "http://localhost:3000"
+    FRONTEND_URL: str = "http://localhost:3000"
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://citypulse:citypulse@localhost:5432/citypulse"
