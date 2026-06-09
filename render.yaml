@@ -49,11 +49,13 @@ services:
         value: false
 
   # ── Celery Worker ────────────────────────────────────────────────────────────
-  - type: worker
-    name: citypulse-worker
+  - type: cron
+    name: citypulse-sync
     runtime: docker
     dockerfilePath: ./Dockerfile.worker
     plan: free
+    schedule: "*/15 * * * *"
+    command: "python -c \"from app.tasks.sync_complaints import sync_city_complaints; sync_city_complaints('69417903-70f5-4908-9471-d4dc09774881'); sync_city_complaints('432e5f51-830f-42d2-aa33-005a00b394fc')\""
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -65,24 +67,6 @@ services:
           type: redis
           property: connectionString
       - key: GEMINI_API_KEY
-        sync: false
-      - key: MAPBOX_TOKEN
-        sync: false
-      - key: RESEND_API_KEY
-        sync: false
-      - key: EMAIL_FROM
-        sync: false
-      - key: SECRET_KEY
-        sync: false
-      - key: CLOUDFLARE_ACCOUNT_ID
-        sync: false
-      - key: R2_ACCESS_KEY_ID
-        sync: false
-      - key: R2_SECRET_ACCESS_KEY
-        sync: false
-      - key: R2_BUCKET_NAME
-        sync: false
-      - key: R2_PUBLIC_URL
         sync: false
       - key: NYC_311_APP_TOKEN
         sync: false
