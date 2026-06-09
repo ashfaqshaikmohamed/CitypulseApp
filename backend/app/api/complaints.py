@@ -78,8 +78,8 @@ async def get_complaints_geojson(
     # 3. Check days elapsed
     if days_ago is not None:
         query_str += " AND filed_at >= NOW() - (:days_ago || ' day')::INTERVAL"
-        params["days_ago"] = days_ago
-
+        params["days_ago"] = str(days_ago)
+        
     query_str += " ORDER BY filed_at DESC LIMIT 1000"
 
     try:

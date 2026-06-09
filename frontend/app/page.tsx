@@ -1,22 +1,46 @@
 // FILE: frontend/app/page.tsx
-// ROLE: High fidelity project placeholder matching the custom dark navy design system rules.
+// ROLE: Main entry page serving as the unified full-viewport layout wrapper for CityPulse's visual map experience.
+
+'use client';
+
+import React, { useState } from 'react';
+import { useMapStore } from '../store/mapStore';
+import { NYC_CITY_ID } from '../lib/api';
+
+// Components
+import TopBar from '../components/TopBar';
+import FilterPanel from '../components/FilterPanel';
+import MapComponent from '../components/Map';
+import ClusterSidebar from '../components/ClusterSidebar';
+import StatsBar from '../components/StatsBar';
+import FileComplaintModal from '../components/FileComplaintModal';
 
 export default function Home() {
+  const { modalOpen, selectedClusterId } = useMapStore();
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6"
-      style={{ background: 'var(--navy)' }}>
-      <div className="max-w-md space-y-6 text-center">
-        <div className="flex justify-center">
-          <div className="h-12 w-12 rounded-full border-t-2 border-r-2 border-[var(--blue4)] animate-spin"></div>
-        </div>
-        <h1 className="text-3xl font-extrabold tracking-tight"
-          style={{ fontFamily: 'var(--font-syne)', color: 'var(--offwhite)' }}>
-          City<span style={{ color: 'var(--blue4)' }}>Pulse</span>
-        </h1>
-        <p className="text-sm" style={{ color: 'var(--offwhite2)' }}>
-          Reconciling municipal data models, analyzing camera visions, and indexing location segments.
-        </p>
-      </div>
+    <main
+      className="relative h-screen w-screen overflow-hidden text-[#e8edf5]"
+      style={{ background: 'var(--navy)', fontFamily: 'var(--font-dm-sans), sans-serif' }}
+    >
+      {/* 1. Header Top Menu bar */}
+      <TopBar />
+
+      {/* 2. Floating Filters sidebar on the left */}
+      <FilterPanel categoryCounts={categoryCounts} />
+
+      {/* 3. Immersive spatial Map stage (center & background) */}
+      <MapComponent cityId={NYC_CITY_ID} onUpdateCounts={setCategoryCounts} />
+
+      {/* 4. Sliding inspection panel on the right (appears if hot-spot cluster selected) */}
+      {selectedClusterId && <ClusterSidebar cityId={NYC_CITY_ID} />}
+
+      {/* 5. Metrics scorecard status bar on lower gutter */}
+      <StatsBar cityId={NYC_CITY_ID} />
+
+      {/* 6. Multi-step AI camera vision upload overlay modal */}
+      {modalOpen && <FileComplaintModal cityId={NYC_CITY_ID} />}
     </main>
   );
 }
