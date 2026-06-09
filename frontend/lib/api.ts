@@ -217,3 +217,41 @@ export async function getEscalation(clusterId: string): Promise<EscalationRecord
     return null;
   }
 }
+
+export interface NeighborhoodResolution {
+  neighborhood: string;
+  avg_days: number;
+  count: number;
+  disparity_z_score: number;
+  high_disparity: boolean;
+}
+
+export interface LongestOpenComplaint {
+  id: string;
+  address: string;
+  category: string;
+  days_open: number;
+  status: string;
+}
+
+export interface CitySummaryScorecard {
+  total_open: number;
+  avg_resolution_days: number;
+  pct_disputed: number;
+}
+
+export interface ScorecardData {
+  resolution_by_neighborhood: NeighborhoodResolution[];
+  longest_open: LongestOpenComplaint[];
+  city_summary: CitySummaryScorecard;
+}
+
+/**
+ * Retrieves the neighborhood accountability scorecard stats.
+ */
+export async function getScorecard(cityId: string): Promise<ScorecardData> {
+  const response = await client.get<ScorecardData>('/api/stats/scorecard', {
+    params: { city_id: cityId },
+  });
+  return response.data;
+}

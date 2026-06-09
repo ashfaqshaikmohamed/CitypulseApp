@@ -5,6 +5,8 @@
 
 import React from 'react';
 import { Search } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useMapStore } from '../store/mapStore';
 
 interface TopBarProps {
@@ -14,6 +16,7 @@ interface TopBarProps {
 export const TopBar: React.FC<TopBarProps> = ({ onSearch }) => {
   const openModal = useMapStore((state) => state.openModal);
   const [searchTerm, setSearchTerm] = React.useState('');
+  const pathname = usePathname();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +24,9 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearch }) => {
       onSearch(searchTerm);
     }
   };
+
+  const isMapActive = pathname === '/' || pathname === '';
+  const isScorecardsActive = pathname?.startsWith('/scorecards');
 
   return (
     <header
@@ -80,27 +86,28 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearch }) => {
 
       {/* Navigation Links */}
       <nav className="ml-8 flex items-center gap-6 h-full">
-        <a
-          href="#"
-          className="flex h-full items-center border-b-2 text-xs font-medium px-1"
+        <Link
+          href="/"
+          className="flex h-full items-center border-b-2 text-xs font-medium px-1 transition-colors"
           style={{
-            color: 'var(--blue5)',
-            borderColor: 'var(--blue3)',
+            color: isMapActive ? 'var(--blue5)' : 'var(--muted)',
+            borderColor: isMapActive ? 'var(--blue3)' : 'transparent',
             fontFamily: 'var(--font-dm-sans), sans-serif',
           }}
         >
           Map
-        </a>
-        <a
-          href="#"
-          className="flex h-full items-center text-xs font-medium px-1 border-b-2 border-transparent hover:text-[var(--offwhite)]"
+        </Link>
+        <Link
+          href="/scorecards"
+          className="flex h-full items-center border-b-2 text-xs font-medium px-1 transition-colors hover:text-[var(--offwhite)]"
           style={{
-            color: 'var(--muted)',
+            color: isScorecardsActive ? 'var(--blue5)' : 'var(--muted)',
+            borderColor: isScorecardsActive ? 'var(--blue3)' : 'transparent',
             fontFamily: 'var(--font-dm-sans), sans-serif',
           }}
         >
           Scorecards
-        </a>
+        </Link>
       </nav>
 
       {/* Actions Segment */}
