@@ -5,7 +5,6 @@
 
 import React, { useState } from 'react';
 import { useMapStore } from '../store/mapStore';
-import { NYC_CITY_ID } from '../lib/api';
 
 // Components
 import TopBar from '../components/TopBar';
@@ -14,9 +13,10 @@ import MapComponent from '../components/Map';
 import ClusterSidebar from '../components/ClusterSidebar';
 import StatsBar from '../components/StatsBar';
 import FileComplaintModal from '../components/FileComplaintModal';
+import OnboardingModal from '../components/OnboardingModal';
 
 export default function Home() {
-  const { modalOpen, selectedClusterId } = useMapStore();
+  const { modalOpen, selectedClusterId, selectedCity } = useMapStore();
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
 
   return (
@@ -31,16 +31,19 @@ export default function Home() {
       <FilterPanel categoryCounts={categoryCounts} />
 
       {/* 3. Immersive spatial Map stage (center & background) */}
-      <MapComponent cityId={NYC_CITY_ID} onUpdateCounts={setCategoryCounts} />
+      <MapComponent onUpdateCounts={setCategoryCounts} />
 
       {/* 4. Sliding inspection panel on the right (appears if hot-spot cluster selected) */}
-      {selectedClusterId && <ClusterSidebar cityId={NYC_CITY_ID} />}
+      {selectedClusterId && <ClusterSidebar cityId={selectedCity.id} />}
 
       {/* 5. Metrics scorecard status bar on lower gutter */}
-      <StatsBar cityId={NYC_CITY_ID} />
+      <StatsBar />
 
       {/* 6. Multi-step AI camera vision upload overlay modal */}
-      {modalOpen && <FileComplaintModal cityId={NYC_CITY_ID} />}
+      {modalOpen && <FileComplaintModal cityId={selectedCity.id} />}
+
+      {/* 7. First-time visitor multi-slide onboarding overlay */}
+      <OnboardingModal />
     </main>
   );
 }

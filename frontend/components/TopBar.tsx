@@ -8,6 +8,8 @@ import { Search } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useMapStore } from '../store/mapStore';
+import { AuthButton } from './AuthButton';
+import CitySelector from './CitySelector';
 
 interface TopBarProps {
   onSearch?: (term: string) => void;
@@ -57,18 +59,8 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearch }) => {
           </span>
         </div>
 
-        {/* NYC City Pill */}
-        <span
-          className="rounded-full border px-3 py-0.5 text-xs font-medium"
-          style={{
-            borderColor: 'var(--border2)',
-            color: 'var(--blue5)',
-            fontSize: '11px',
-            fontFamily: 'var(--font-syne), Syne, sans-serif',
-          }}
-        >
-          NYC
-        </span>
+        {/* Dynamic City Switcher */}
+        <CitySelector />
       </div>
 
       {/* Styled Search Bar */}
@@ -111,7 +103,8 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearch }) => {
       </nav>
 
       {/* Actions Segment */}
-      <div className="ml-auto flex items-center">
+      <div className="ml-auto flex items-center gap-3">
+        <AuthButton />
         <button
           id="btn-report-complaint-topbar"
           onClick={openModal}

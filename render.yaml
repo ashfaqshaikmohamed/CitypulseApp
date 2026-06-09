@@ -1,0 +1,39 @@
+# ROLE: Production deployment configuration for Render (PostgreSql with PostGIS, FastAPI backend, and Next.js frontend services)
+services:
+  # FastAPI Backend Web Service
+  - type: web
+    name: citypulse-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 4
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: citypulse-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # Next.js Frontend Web Service
+  - type: web
+    name: citypulse-frontend
+    env: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: citypulse-backend
+          property: url
+      - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+        sync: false
+
+databases:
+  - name: citypulse-db
+    databaseName: citypulse
+    user: citypulse_admin

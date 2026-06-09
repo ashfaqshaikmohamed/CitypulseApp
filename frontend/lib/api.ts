@@ -165,6 +165,14 @@ export async function getSummary(cityId: string): Promise<SummaryData> {
   }
 }
 
+export function getAuthHeaders(): Record<string, string> {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('citypulse_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  }
+  return {};
+}
+
 /**
  * Multi-layer vision complaint file processing payload.
  */
@@ -172,13 +180,23 @@ export async function fileComplaint(
   photo: File,
   lat: number,
   lng: number,
-  cityId: string
+  cityId: string,
+  userName?: string,
+  userId?: string,
+  description?: string,
+  confirmedAddress?: string,
+  complaintId?: string
 ): Promise<ComplaintFileResult> {
   const formData = new FormData();
   formData.append('photo', photo);
   formData.append('lat', String(lat));
   formData.append('lng', String(lng));
   formData.append('city_id', cityId);
+  if (userName) formData.append('user_name', userName);
+  if (userId) formData.append('user_id', userId);
+  if (description) formData.append('description', description);
+  if (confirmedAddress) formData.append('confirmed_address', confirmedAddress);
+  if (complaintId) formData.append('complaint_id', complaintId);
 
   const response = await client.post<ComplaintFileResult>(
     '/api/complaints/file',
@@ -186,6 +204,7 @@ export async function fileComplaint(
     {
       headers: {
         'Content-Type': 'multipart/form-data',
+        ...getAuthHeaders()
       },
     }
   );

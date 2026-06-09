@@ -6,16 +6,17 @@
 import React from 'react';
 import useSWR from 'swr';
 import { getSummary } from '../lib/api';
+import { useMapStore } from '../store/mapStore';
 
-interface StatsBarProps {
-  cityId: string;
-}
+interface StatsBarProps {}
 
-export const StatsBar: React.FC<StatsBarProps> = ({ cityId }) => {
+export const StatsBar: React.FC<StatsBarProps> = () => {
+  const { selectedCity } = useMapStore();
+
   // Fetch summary data from server and refresh every 60s
-  const { data: summary, error } = useSWR(
-    ['city-summary', cityId],
-    () => getSummary(cityId),
+  const { data: summary } = useSWR(
+    ['city-summary', selectedCity.id],
+    () => getSummary(selectedCity.id),
     {
       refreshInterval: 60000,
       fallbackData: {

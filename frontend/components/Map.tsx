@@ -12,16 +12,28 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useMapStore } from '../store/mapStore';
 import { getComplaints, getClusters } from '../lib/api';
 
+const BBOX_LOOKUP: Record<string, string> = {
+  // NYC
+  '69417903-70f5-4908-9471-d4dc09774881': '-74.25909,40.477399,-73.700272,40.917577',
+  // Chicago
+  '1ce79465-1173-416c-bc69-83454f67e513': '-87.940267,41.644335,-87.523661,42.023135',
+  // SF
+  '432e5f51-830f-42d2-aa33-005a00b394fc': '-122.514926,37.708075,-122.357555,37.832772',
+};
+
 interface MapComponentProps {
-  cityId: string;
   onUpdateCounts?: (counts: Record<string, number>) => void;
 }
 
-export const MapComponent: React.FC<MapComponentProps> = ({ cityId, onUpdateCounts }) => {
-  const { filters, setCluster } = useMapStore();
-  
-  // Default bounds setting for NYC
-  const [bbox, setBbox] = useState<string>('-74.25909,40.477399,-73.700272,40.917577');
+export const MapComponent: React.FC<MapComponentProps> = ({ onUpdateCounts }) => {
+  const { filters, setCluster, selectedCity } = useMapStore();
+  const mapRef = useRef<any>(null);
+
+  // Initialize bbox depending on the selected city
+  const [bbox, setBbox] = useState<string>(
+    BBOX_LOOKUP[selectedCity.id] || '-74.25909,40.477399,-73.700272,40.917577'
+  );
+
   const [hoveredFeature, setHoveredFeature] = useState<{
     longitude: number;
     latitude: number;
@@ -30,17 +42,30 @@ export const MapComponent: React.FC<MapComponentProps> = ({ cityId, onUpdateCoun
 
   const moveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // When selectedCity transitions, animate map frame and update target boundaries
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [selectedCity.center_lng, selectedCity.center_lat],
+        zoom: selectedCity.zoom,
+        duration: 1500,
+      });
+    }
+    const defaultBbox = BBOX_LOOKUP[selectedCity.id] || BBOX_LOOKUP['69417903-70f5-4908-9471-d4dc09774881'];
+    setBbox(defaultBbox);
+  }, [selectedCity]);
+
   // Fetch Complaints via SWR, refresh every 30 seconds
   const { data: complaintsData } = useSWR(
-    ['complaints', cityId, bbox, filters],
-    () => getComplaints(cityId, bbox, filters),
+    ['complaints', selectedCity.id, bbox, filters],
+    () => getComplaints(selectedCity.id, bbox, filters),
     { refreshInterval: 30000 }
   );
 
   // Fetch Clusters via SWR, refresh every 30 seconds
   const { data: clustersData } = useSWR(
-    ['clusters', cityId, bbox],
-    () => getClusters(cityId, bbox),
+    ['clusters', selectedCity.id, bbox],
+    () => getClusters(selectedCity.id, bbox),
     { refreshInterval: 30000 }
   );
 
@@ -129,11 +154,12 @@ export const MapComponent: React.FC<MapComponentProps> = ({ cityId, onUpdateCoun
   return (
     <div className="absolute inset-0 h-full w-full bg-[#040d1a]" id="map-stage-container">
       <Map
+        ref={mapRef}
         mapLib={maplibregl}
         initialViewState={{
-          longitude: -74.006,
-          latitude: 40.7128,
-          zoom: 12,
+          longitude: selectedCity.center_lng,
+          latitude: selectedCity.center_lat,
+          zoom: selectedCity.zoom,
         }}
         padding={{ top: 52, left: 184, right: 0, bottom: 60 }}
         mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
@@ -208,7 +234,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({ cityId, onUpdateCoun
               layout={{
                 'text-field': ['to-string', ['get', 'complaint_count']],
                 'text-size': 12,
-                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                'text-font': ['Open Sans Bold', 'Arial HTML5 Bold'],
               }}
               paint={{
                 'text-color': [

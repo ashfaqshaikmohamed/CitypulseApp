@@ -15,6 +15,8 @@ from app.api.clusters import router as clusters_router
 from app.api.stats import router as stats_router
 from app.api.users import router as users_router
 from app.api.escalations import router as escalations_router
+from app.api.auth import router as auth_router
+
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +41,12 @@ async def startup_event():
     """
     Guarantees backend databases conform to expectations.
     Dynamically initializes resolutions tracking table if not present.
+    Executes schema migrations for user OAuth attributes seamlessly.
     """
     logger.info("Initializing database checks and verifying resolutions table state...")
     try:
         async with engine.begin() as conn:
+            # 1. Resolutions table dynamic creation
             await conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS resolutions (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -53,16 +57,25 @@ async def startup_event():
                 );
             """))
             logger.info("Resolutions table verified and stable.")
+
+            # 2. Dynamic column addition for users OAuth
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ;"))
+            logger.info("Users table auth columns checked/migrated successfully.")
     except Exception as startup_err:
         logger.error(f"Startup check failed during database dynamic provisioning: {startup_err}")
 
 
 # Include all 5 requested routers with proper prefixes
+app.include_router(auth_router, prefix="/api/auth")
 app.include_router(complaints_router, prefix="/api/complaints")
 app.include_router(clusters_router, prefix="/api/clusters")
 app.include_router(stats_router, prefix="/api/stats")
 app.include_router(users_router, prefix="/api/users")
 app.include_router(escalations_router, prefix="/api/escalations")
+
 
 # Inline Cities router stub
 cities_router = APIRouter(prefix="/api/cities", tags=["Cities"])

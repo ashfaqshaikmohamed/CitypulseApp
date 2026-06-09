@@ -3,11 +3,12 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { X, Camera, MapPin, CheckCircle } from 'lucide-react';
 import { useMapStore } from '../store/mapStore';
 import { fileComplaint, ComplaintFileResult } from '../lib/api';
+
 
 interface FileComplaintModalProps {
   cityId: string;
@@ -33,6 +34,28 @@ export const FileComplaintModal: React.FC<FileComplaintModalProps> = ({ cityId }
   const [editableDescription, setEditableDescription] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+  // New OAuth verification state fields
+  const [userNameInput, setUserNameInput] = useState<string>('');
+  const [confirmedAddress, setConfirmedAddress] = useState<string>('');
+  const [cachedUser, setCachedUser] = useState<{ id: string; name: string } | null>(null);
+
+  // Read local storage on mount and modal state trigger
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('citypulse_token');
+      const storedUser = localStorage.getItem('citypulse_user');
+      if (token && storedUser) {
+        try {
+          setCachedUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error("Failed parsing user storage session:", e);
+        }
+      } else {
+        setCachedUser(null);
+      }
+    }
+  }, [modalOpen]);
+
   const handleClose = () => {
     closeModal();
     // Reset state back to initial step
@@ -41,6 +64,8 @@ export const FileComplaintModal: React.FC<FileComplaintModalProps> = ({ cityId }
     setImagePreview('');
     setVisionResult(null);
     setEditableDescription('');
+    setUserNameInput('');
+    setConfirmedAddress('');
     setIsSubmitting(false);
   };
 
@@ -52,10 +77,25 @@ export const FileComplaintModal: React.FC<FileComplaintModalProps> = ({ cityId }
       setStep(2);
 
       try {
+        // Read stored user if available for fast metadata mapping
+        let userIdVal: string | undefined = undefined;
+        let userNameVal: string | undefined = undefined;
+        if (typeof window !== 'undefined') {
+          const storedUser = localStorage.getItem('citypulse_user');
+          if (storedUser) {
+            try {
+              const u = JSON.parse(storedUser);
+              userIdVal = u.id;
+              userNameVal = u.name;
+            } catch (e) {}
+          }
+        }
+
         // Submit immediately for analysis using NYC coordinates (40.7128, -74.006)
-        const result = await fileComplaint(file, 40.7128, -74.006, cityId);
+        const result = await fileComplaint(file, 40.7128, -74.006, cityId, userNameVal, userIdVal);
         setVisionResult(result);
         setEditableDescription(result.description || '');
+        setConfirmedAddress(result.address || '');
         setStep(3);
       } catch (err) {
         console.error('Failed to classify upload:', err);
@@ -71,6 +111,7 @@ export const FileComplaintModal: React.FC<FileComplaintModalProps> = ({ cityId }
         };
         setVisionResult(simulatedResult);
         setEditableDescription(simulatedResult.description);
+        setConfirmedAddress(simulatedResult.address);
         setStep(3);
       }
     }
@@ -82,15 +123,36 @@ export const FileComplaintModal: React.FC<FileComplaintModalProps> = ({ cityId }
     multiple: false,
   });
 
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
     setIsSubmitting(true);
-    // Persisting description can happen here or simulation transitions.
-    // Since backend stores immediately on file upload, we can immediately move to step 4.
-    setTimeout(() => {
+    try {
+      if (visionResult && selectedFile) {
+        const finalUserId = cachedUser?.id;
+        const finalUserName = cachedUser ? cachedUser.name : userNameInput;
+
+        // Re-call fileComplaint with edited inputs for in-place updates
+        await fileComplaint(
+          selectedFile,
+          40.7128,
+          -74.006,
+          cityId,
+          finalUserName || undefined,
+          finalUserId || undefined,
+          editableDescription,
+          confirmedAddress,
+          visionResult.complaint_id
+        );
+      }
       setIsSubmitting(false);
       setStep(4);
-    }, 800);
+    } catch (err) {
+      console.error('Failed processing edits during finalize:', err);
+      // fallback safety so user experience finishes successfully
+      setIsSubmitting(false);
+      setStep(4);
+    }
   };
+
 
   if (!modalOpen) return null;
 
@@ -235,6 +297,46 @@ export const FileComplaintModal: React.FC<FileComplaintModalProps> = ({ cityId }
               </span>
             </div>
 
+            {/* Name Field (if not signed in) */}
+            {!cachedUser && (
+              <div className="flex flex-col mb-3">
+                <span className="stat-lbl mb-1 block" style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--muted)', fontFamily: 'var(--font-syne)' }}>
+                  Your Name
+                </span>
+                <input
+                  type="text"
+                  placeholder="Full name"
+                  value={userNameInput}
+                  onChange={(e) => setUserNameInput(e.target.value)}
+                  className="w-full rounded-lg p-2.5 text-xs focus:outline-none focus:border-[var(--blue3)] border border-[var(--border)]"
+                  style={{
+                    background: 'var(--navy3)',
+                    color: 'var(--offwhite2)',
+                    fontFamily: 'var(--font-dm-sans), sans-serif',
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Address Confirmation field */}
+            <div className="flex flex-col mb-3">
+              <span className="stat-lbl mb-1 block" style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--muted)', fontFamily: 'var(--font-syne)' }}>
+                Confirm Address
+              </span>
+              <input
+                type="text"
+                placeholder="Confirm address"
+                value={confirmedAddress}
+                onChange={(e) => setConfirmedAddress(e.target.value)}
+                className="w-full rounded-lg p-2.5 text-xs focus:outline-none focus:border-[var(--blue3)] border border-[var(--border)]"
+                style={{
+                  background: 'var(--navy3)',
+                  color: 'var(--offwhite2)',
+                  fontFamily: 'var(--font-dm-sans), sans-serif',
+                }}
+              />
+            </div>
+
             {/* Editable Description area */}
             <textarea
               rows={3}
@@ -248,6 +350,7 @@ export const FileComplaintModal: React.FC<FileComplaintModalProps> = ({ cityId }
                 fontFamily: 'var(--font-dm-sans), sans-serif',
               }}
             />
+
 
             {/* Location Address */}
             <div className="flex items-center gap-1.5 mb-5 px-1 min-w-0">
