@@ -89,6 +89,21 @@ async def get_cities():
 
 app.include_router(cities_router)
 
+@app.post("/api/admin/sync")
+async def trigger_sync():
+    """Trigger 311 data sync for all cities."""
+    import asyncio
+    from app.tasks.sync_complaints import sync_city_complaints
+    import threading
+    
+    def run_sync():
+        sync_city_complaints('69417903-70f5-4908-9471-d4dc09774881')
+        sync_city_complaints('1ce79465-1173-416c-bc69-83454f67e513')
+        sync_city_complaints('432e5f51-830f-42d2-aa33-005a00b394fc')
+    
+    thread = threading.Thread(target=run_sync)
+    thread.start()
+    return {"status": "sync started for all cities"}
 
 @app.get("/health", tags=["System"])
 async def health_check():
