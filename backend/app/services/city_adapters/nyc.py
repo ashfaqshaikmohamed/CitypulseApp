@@ -9,7 +9,9 @@ from datetime import datetime
 from typing import List, Optional
 import httpx
 
-from app.services.city_adapters.base import (    NormalizedComplaint,
+from app.services.city_adapters.base import (
+    CityAdapter,
+    NormalizedComplaint,
     ComplaintSubmission,
     normalize_category
 )
