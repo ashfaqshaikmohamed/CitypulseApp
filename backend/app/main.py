@@ -2,7 +2,10 @@
 # ROLE: Core FastAPI application entry point, setting up CORS middleware, routes, and overall app lifecycles.
 
 import logging
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Depends
+from app.core.database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
@@ -77,15 +80,15 @@ app.include_router(users_router, prefix="/api/users")
 app.include_router(escalations_router, prefix="/api/escalations")
 
 
-# Inline Cities router stub
+# Inline Cities router
 cities_router = APIRouter(prefix="/api/cities", tags=["Cities"])
 
 @cities_router.get("")
-async def get_cities():
-    """
-    City management listing fallback.
-    """
-    return {"message": "Cities endpoint stub"}
+async def get_cities(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import text
+    result = await db.execute(text("SELECT id, name, state, api_type, center_lat, center_lng, zoom FROM cities WHERE active = true ORDER BY name"))
+    rows = result.mappings().all()
+    return [dict(row) for row in rows]
 
 app.include_router(cities_router)
 
