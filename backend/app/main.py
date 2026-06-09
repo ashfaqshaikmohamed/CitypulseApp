@@ -25,8 +25,9 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="CityPulse API",
+    description="Civic accountability API engine for real-time 311 sync, vision profiling, and complaint clustering.",
+    version="1.0.0",
     redirect_slashes=False,
-    ...
 )
 
 # CORS Middleware setup
