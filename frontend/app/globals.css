@@ -281,3 +281,21 @@ h1, h2, h3, h4, h5, h6, .font-display {
   50% { transform: translateY(-6px); }
 }
 
+
+/* ── Search banner / dropdown entrance animation ── */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px) translateX(-50%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(-50%);
+  }
+}
+
+/* For non-banner elements (dropdown) that don't need translateX offset */
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

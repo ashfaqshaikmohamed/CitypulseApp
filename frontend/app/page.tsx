@@ -1,12 +1,11 @@
 // FILE: frontend/app/page.tsx
-// ROLE: Main entry page serving as the unified full-viewport layout wrapper for CityPulse's visual map experience.
+// ROLE: Main entry page — full-viewport layout wrapper for CityPulse map experience.
 
 'use client';
 
 import React, { useState } from 'react';
 import { useMapStore } from '../store/mapStore';
 
-// Components
 import TopBar from '../components/TopBar';
 import FilterPanel from '../components/FilterPanel';
 import MapComponent from '../components/Map';
@@ -24,25 +23,25 @@ export default function Home() {
       className="relative h-screen w-screen overflow-hidden text-[#e8edf5]"
       style={{ background: 'var(--navy)', fontFamily: 'var(--font-dm-sans), sans-serif' }}
     >
-      {/* 1. Header Top Menu bar */}
+      {/* 1. Header */}
       <TopBar />
 
-      {/* 2. Floating Filters sidebar on the left */}
+      {/* 2. Left filter sidebar */}
       <FilterPanel categoryCounts={categoryCounts} />
 
-      {/* 3. Immersive spatial Map stage (center & background) */}
+      {/* 3. Map stage */}
       <MapComponent onUpdateCounts={setCategoryCounts} />
 
-      {/* 4. Sliding inspection panel on the right (appears if hot-spot cluster selected) */}
+      {/* 4. Cluster inspection panel */}
       {selectedClusterId && <ClusterSidebar cityId={selectedCity.id} />}
 
-      {/* 5. Metrics scorecard status bar on lower gutter */}
+      {/* 5. Bottom stats bar */}
       <StatsBar />
 
-      {/* 6. Multi-step AI camera vision upload overlay modal */}
+      {/* 6. File complaint modal */}
       {modalOpen && <FileComplaintModal cityId={selectedCity.id} />}
 
-      {/* 7. First-time visitor multi-slide onboarding overlay */}
+      {/* 7. Onboarding overlay */}
       <OnboardingModal />
     </main>
   );
