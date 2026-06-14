@@ -57,8 +57,8 @@ export const useMapStore = create<MapStore>((set) => ({
     daysAgo: 30,
   },
   modalOpen: false,
-  cities: DEFAULT_CITIES,
-  selectedCity: DEFAULT_CITIES[0],
+  cities: CITIES,
+  selectedCity: CITIES[0],
 
   setCluster: (id) => set({ selectedClusterId: id }),
   clearCluster: () => set({ selectedClusterId: null }),
