@@ -17,10 +17,13 @@ const syne = Syne({
   variable: '--font-syne',
 });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'CityPulse | Civic Accountability Engine',
-  description: 'Track municipal response times, visualize complaint clusters, and hold local councils accountable.',
-};
+  description: 'Real-time 311 complaint data for NYC, Chicago, and San Francisco',
+  icons: {
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌇</text></svg>",
+  },
+}
 
 export default function RootLayout({
   children,
