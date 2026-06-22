@@ -115,13 +115,13 @@ export const MapComponent: React.FC<MapComponentProps> = ({ onUpdateCounts }) =>
     })();
   }, [searchQuery, setSearchBanner]);
 
-  const { data: complaintsData } = useSWR(
+  const { data: complaintsData, isLoading: complaintsLoading } = useSWR(
     ['complaints', selectedCity.id, bbox, filters],
     () => getComplaints(selectedCity.id, bbox, filters),
     { refreshInterval: 30000 }
   );
 
-  const { data: clustersData } = useSWR(
+  const { data: clustersData, isLoading: clustersLoading } = useSWR(
     ['clusters', selectedCity.id, bbox],
     () => getClusters(selectedCity.id, bbox),
     { refreshInterval: 30000 }
@@ -321,6 +321,43 @@ export const MapComponent: React.FC<MapComponentProps> = ({ onUpdateCounts }) =>
           </Popup>
         )}
       </Map>
+
+      {/* ── Initial data-load banner — only shows before the first dataset arrives ── */}
+      {!complaintsData && !clustersData && (complaintsLoading || clustersLoading) && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            bottom: '72px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 40,
+            animation: 'fadeSlideUp 0.35s ease both',
+          }}
+        >
+          <div
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl"
+            style={{
+              background: 'rgba(7,21,40,0.92)',
+              border: '1px solid rgba(96,165,250,0.35)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+              maxWidth: '420px',
+            }}
+          >
+            <Clock className="h-3.5 w-3.5 flex-shrink-0 animate-pulse" style={{ color: 'var(--blue4)' }} />
+            <span
+              className="text-[11px] leading-snug"
+              style={{
+                fontFamily: 'var(--font-dm-sans), sans-serif',
+                color: 'var(--blue5)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Loading complaint data — this can take up to 30 seconds
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* ── Inline "coming soon" / info search banner ── */}
       {searchBanner && (

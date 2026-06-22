@@ -147,7 +147,7 @@ export default function OnboardingModal() {
                       Live data sync
                     </h3>
                     <p className="text-[11px] mt-0.5" style={{ color: 'var(--muted)', fontWeight: 300 }}>
-                      We pull real 311 complaints from city open data APIs every 15 minutes.
+                      We pull real 311 complaints from city open data APIs every 15 minutes. On first load, it can take up to 30 seconds for data points to appear on the map.
                     </p>
                   </div>
                 </div>
