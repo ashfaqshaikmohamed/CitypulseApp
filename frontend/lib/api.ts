@@ -2,6 +2,12 @@
 // ROLE: Typed API client managing connection blocks to the back-end services, handling file forms, and caching lookups.
 
 import axios from 'axios';
+import {
+  FALLBACK_COMPLAINTS,
+  FALLBACK_CLUSTERS,
+  FALLBACK_SUMMARY,
+  FALLBACK_SCORECARD,
+} from './fallbackData';
 
 export interface SummaryData {
   open_count: number;
@@ -51,6 +57,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 6000, // fail fast so we can fall back to seed data instead of hanging
 });
 
 export async function getComplaints(
@@ -103,11 +110,13 @@ export async function getComplaints(
       return response.data;
     }
   } catch (error) {
-    console.error('getComplaints API request failed:', error);
-    return {
-      type: 'FeatureCollection',
-      features: [],
-    };
+    console.error('getComplaints API request failed, using seed data:', error);
+    return (
+      FALLBACK_COMPLAINTS[cityId] ?? {
+        type: 'FeatureCollection',
+        features: [],
+      }
+    );
   }
 }
 
@@ -127,11 +136,13 @@ export async function getClusters(
     });
     return response.data;
   } catch (error) {
-    console.error('getClusters API request failed:', error);
-    return {
-      type: 'FeatureCollection',
-      features: [],
-    };
+    console.error('getClusters API request failed, using seed data:', error);
+    return (
+      FALLBACK_CLUSTERS[cityId] ?? {
+        type: 'FeatureCollection',
+        features: [],
+      }
+    );
   }
 }
 
@@ -142,14 +153,16 @@ export async function getSummary(cityId: string): Promise<SummaryData> {
     });
     return response.data;
   } catch (error) {
-    console.error('getSummary API request failed:', error);
-    return {
-      open_count: 0,
-      closed_count: 0,
-      avg_resolution_days: 0.0,
-      top_category: 'none',
-      oldest_open_days: 0,
-    };
+    console.error('getSummary API request failed, using seed data:', error);
+    return (
+      FALLBACK_SUMMARY[cityId] ?? {
+        open_count: 0,
+        closed_count: 0,
+        avg_resolution_days: 0.0,
+        top_category: 'none',
+        oldest_open_days: 0,
+      }
+    );
   }
 }
 
@@ -245,8 +258,19 @@ export interface ScorecardData {
 }
 
 export async function getScorecard(cityId: string): Promise<ScorecardData> {
-  const response = await client.get<ScorecardData>('/api/stats/scorecard', {
-    params: { city_id: cityId },
-  });
-  return response.data;
+  try {
+    const response = await client.get<ScorecardData>('/api/stats/scorecard', {
+      params: { city_id: cityId },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('getScorecard API request failed, using seed data:', error);
+    return (
+      FALLBACK_SCORECARD[cityId] ?? {
+        resolution_by_neighborhood: [],
+        longest_open: [],
+        city_summary: { total_open: 0, avg_resolution_days: 0, pct_disputed: 0 },
+      }
+    );
+  }
 }
