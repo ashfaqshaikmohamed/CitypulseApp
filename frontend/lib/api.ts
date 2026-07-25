@@ -1,5 +1,13 @@
 // FILE: frontend/lib/api.ts
 // ROLE: Typed API client managing connection blocks to the back-end services, handling file forms, and caching lookups.
+//
+// NOTE — backend temporarily disabled: the Docker/backend stack for this project isn't
+// currently running, so USE_LIVE_BACKEND is set to false below. While it's false,
+// getComplaints/getClusters/getSummary/getScorecard skip the network call entirely and
+// return the hardcoded snapshot data from ./fallbackData immediately (no 6s timeout to
+// wait out, no failed request in the console). Once the backend/database is working
+// again, flip USE_LIVE_BACKEND back to true and everything goes back to trying the live
+// API first (falling back to this same seed data only if that request fails).
 
 import axios from 'axios';
 import {
@@ -8,6 +16,8 @@ import {
   FALLBACK_SUMMARY,
   FALLBACK_SCORECARD,
 } from './fallbackData';
+
+const USE_LIVE_BACKEND = false;
 
 export interface SummaryData {
   open_count: number;
@@ -85,6 +95,15 @@ export async function getComplaints(
     return params;
   };
 
+  if (!USE_LIVE_BACKEND) {
+    return (
+      FALLBACK_COMPLAINTS[cityId] ?? {
+        type: 'FeatureCollection',
+        features: [],
+      }
+    );
+  }
+
   try {
     if (filters.status === 'all') {
       const [openRes, closedRes] = await Promise.all([
@@ -124,6 +143,15 @@ export async function getClusters(
   cityId: string,
   bbox?: string
 ): Promise<GeoJSON.FeatureCollection> {
+  if (!USE_LIVE_BACKEND) {
+    return (
+      FALLBACK_CLUSTERS[cityId] ?? {
+        type: 'FeatureCollection',
+        features: [],
+      }
+    );
+  }
+
   try {
     const params = new URLSearchParams();
     params.append('city_id', cityId);
@@ -147,6 +175,18 @@ export async function getClusters(
 }
 
 export async function getSummary(cityId: string): Promise<SummaryData> {
+  if (!USE_LIVE_BACKEND) {
+    return (
+      FALLBACK_SUMMARY[cityId] ?? {
+        open_count: 0,
+        closed_count: 0,
+        avg_resolution_days: 0.0,
+        top_category: 'none',
+        oldest_open_days: 0,
+      }
+    );
+  }
+
   try {
     const response = await client.get<SummaryData>('/api/stats/summary', {
       params: { city_id: cityId },
@@ -258,6 +298,16 @@ export interface ScorecardData {
 }
 
 export async function getScorecard(cityId: string): Promise<ScorecardData> {
+  if (!USE_LIVE_BACKEND) {
+    return (
+      FALLBACK_SCORECARD[cityId] ?? {
+        resolution_by_neighborhood: [],
+        longest_open: [],
+        city_summary: { total_open: 0, avg_resolution_days: 0, pct_disputed: 0 },
+      }
+    );
+  }
+
   try {
     const response = await client.get<ScorecardData>('/api/stats/scorecard', {
       params: { city_id: cityId },
